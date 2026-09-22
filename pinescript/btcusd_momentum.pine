@@ -1,0 +1,27 @@
+//@version=5
+// ──────────────────────────────────────────────────────────────────────────────
+// MWVSE TRADING PANEL — Momentum Full-Port Alert Template
+// Engineered by @ghostwwn (https://github.com/ghostwwn)
+// ──────────────────────────────────────────────────────────────────────────────
+strategy("MWVSE Momentum by @ghostwwn", overlay=true)
+
+secretToken = input.string("your_super_secret_webhook_key_here", title="Webhook Secret")
+rsiLength = input.int(14, title="RSI Length")
+rsiOverbought = input.int(70, title="Overbought Level")
+rsiOversold = input.int(30, title="Oversold Level")
+
+vrsi = ta.rsi(close, rsiLength)
+
+buySignal = ta.crossover(vrsi, rsiOversold)
+sellSignal = ta.crossunder(vrsi, rsiOverbought)
+
+buyAlert = '{"secret": "' + secretToken + '", "ticker": "' + syminfo.ticker + '", "action": "buy", "full_port": true}'
+sellAlert = '{"secret": "' + secretToken + '", "ticker": "' + syminfo.ticker + '", "action": "sell", "full_port": true}'
+
+if (buySignal)
+    strategy.entry("Momentum Long", strategy.long)
+    alert(buyAlert, alert.freq_once_per_bar_close)
+
+if (sellSignal)
+    strategy.close("Momentum Long")
+    alert(sellAlert, alert.freq_once_per_bar_close)

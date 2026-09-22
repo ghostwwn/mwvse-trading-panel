@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MWVSE Trading Panel — Engineered by @ghostwwn</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #080b11;
+            --bg-card: #0f1523;
+            --bg-elevated: #161f33;
+            --border-dim: #1f2c47;
+            --border-glow: #2d426b;
+            --accent-cyan: #00f2fe;
+            --accent-blue: #4facfe;
+            --gain-green: #00e676;
+            --loss-red: #ff1744;
+            --gold: #ffd600;
+            --text-primary: #f0f4fc;
+            --text-secondary: #8899b7;
+            --text-muted: #4e6080;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Top Header */
+        header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border-dim);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-badge {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            color: #000;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+        .brand-title {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #fff;
+        }
+        .author-tag {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border-dim);
+            transition: all 0.2s;
+        }
+        .author-tag:hover {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        .header-stats {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-val {
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Disclaimer Strip */
+        .disclaimer-strip {
+            background: rgba(255, 214, 0, 0.04);
+            border-bottom: 1px solid rgba(255, 214, 0, 0.15);
+            padding: 6px 24px;
+            font-size: 11px;
+            color: var(--gold);
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Main Workspace */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 16px;
+            padding: 16px 24px;
+            flex: 1;
+        }
+
+        /* Left Side: Chart + Positions */
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .chart-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            height: 480px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .positions-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-dim);
+        }
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        th {
+            text-align: left;
+            padding: 8px 12px;
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-dim);
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .pos-type-buy { color: var(--gain-green); font-weight: 700; }
+        .pos-type-short { color: var(--loss-red); font-weight: 700; }
+        .green { color: var(--gain-green); }
+        .red { color: var(--loss-red); }
+
+        /* Right Side: Order Desk & Logs */
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .desk-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .quick-symbols {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+        .quick-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-dim);
+            color: var(--text-primary);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .quick-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .form-input {
+            width: 100%;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-dim);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .action-btn {
+            padding: 10px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 700;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: opacity 0.2s;
+        }
+        .action-btn:hover { opacity: 0.85; }
+        .btn-buy { background: var(--gain-green); color: #000; }
+        .btn-sell { background: #26a69a; color: #fff; }
+        .btn-short { background: var(--loss-red); color: #fff; }
+        .btn-cover { background: #ab47bc; color: #fff; }
+
+        /* Execution Logs */
+        .logs-box {
+            background: #05070b;
+            border: 1px solid var(--border-dim);
+            border-radius: 6px;
+            padding: 10px;
+            height: 220px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .log-entry { color: var(--text-secondary); }
+
+        /* Footer */
+        footer {
+            background-color: var(--bg-card);
+            border-top: 1px solid var(--border-dim);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <span class="brand-badge">MWVSE PANEL</span>
+            <span class="brand-title">Trading Workstation</span>
+            <a href="https://github.com/ghostwwn/mwvse-trading-panel" target="_blank" class="author-tag">Built by @ghostwwn</a>
+        </div>
+        <div class="header-stats">
+            <div class="stat-item">
+                <span class="stat-label">Net Worth</span>
+                <span class="stat-val" id="net-worth">$100,000.00</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Buying Power</span>
+                <span class="stat-val green" id="buying-power">$200,000.00</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Tournament Rank</span>
+                <span class="stat-val" id="rank" style="color: var(--gold);">#1 / 1</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="disclaimer-strip">
+        ⚠️ DISCLAIMER: Independent open-source project. Not affiliated with or endorsed by MarketWatch, Inc. or Dow Jones & Company. Provided AS-IS.
+    </div>
+
+    <div class="container">
+        <!-- Left: Chart & Holdings -->
+        <div class="left-col">
+            <div class="chart-card">
+                <!-- TradingView Widget -->
+                <div class="tradingview-widget-container" style="height:100%;width:100%">
+                    <div id="tradingview_chart" style="height:calc(100% - 32px);width:100%"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+                    <script type="text/javascript">
+                        new TradingView.widget({
+                            "autosize": true,
+                            "symbol": "NASDAQ:TSLA",
+                            "interval": "5",
+                            "timezone": "America/New_York",
+                            "theme": "dark",
+                            "style": "1",
+                            "locale": "en",
+                            "toolbar_bg": "#0f1523",
+                            "enable_publishing": false,
+                            "container_id": "tradingview_chart"
+                        });
+                    </script>
+                </div>
+            </div>
+
+            <div class="positions-card">
+                <div class="card-header">
+                    <span class="card-title">Active Open Positions</span>
+                    <span id="pos-count" style="font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono'">0 positions</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Side</th>
+                            <th>Shares</th>
+                            <th>Market Price</th>
+                            <th>Total Value</th>
+                            <th>Unrealized P&L</th>
+                        </tr>
+                    </thead>
+                    <tbody id="holdings-tbody">
+                        <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Loading positions...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Right: 1-Click Order Desk & Execution Logs -->
+        <div class="right-col">
+            <div class="desk-card">
+                <div class="card-header">
+                    <span class="card-title">1-Click Execution Desk</span>
+                </div>
+                <div class="quick-symbols">
+                    <button class="quick-btn" onclick="selectTicker('TSLA')">TSLA</button>
+                    <button class="quick-btn" onclick="selectTicker('TQQQ')">TQQQ</button>
+                    <button class="quick-btn" onclick="selectTicker('NVDA')">NVDA</button>
+                    <button class="quick-btn" onclick="selectTicker('MSTR')">MSTR</button>
+                    <button class="quick-btn" onclick="selectTicker('ARM')">ARM</button>
+                    <button class="quick-btn" onclick="selectTicker('PLTR')">PLTR</button>
+                    <button class="quick-btn" onclick="selectTicker('AAPL')">AAPL</button>
+                    <button class="quick-btn" onclick="selectTicker('AMD')">AMD</button>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Ticker Symbol</label>
+                    <input type="text" id="order-ticker" class="form-input" value="TSLA" placeholder="e.g. TSLA">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Shares Quantity</label>
+                    <input type="number" id="order-shares" class="form-input" value="25">
+                </div>
+
+                <div class="action-grid">
+                    <button class="action-btn btn-buy" onclick="submitOrder('buy')">Buy Long</button>
+                    <button class="action-btn btn-sell" onclick="submitOrder('sell')">Close / Sell</button>
+                    <button class="action-btn btn-short" onclick="submitOrder('short')">Sell Short</button>
+                    <button class="action-btn btn-cover" onclick="submitOrder('cover')">Buy to Cover</button>
+                </div>
+            </div>
+
+            <div class="desk-card">
+                <div class="card-header">
+                    <span class="card-title">Execution Terminal Feed</span>
+                </div>
+                <div class="logs-box" id="logs-container">
+                    <div class="log-entry">[SYSTEM] Initializing MWVSE Workstation v2.5.0...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <span>Engineered with precision by <a href="https://github.com/ghostwwn" style="color:var(--text-secondary);text-decoration:none;">@ghostwwn</a></span>
+        <span>Open Source • MIT License • Educational Tool</span>
+    </footer>
+
+    <script>
+        function selectTicker(sym) {
+            document.getElementById('order-ticker').value = sym;
+        }
+
+        async function fetchPortfolio() {
+            try {
+                const res = await fetch('/api/portfolio');
+                const data = await res.json();
+                document.getElementById('net-worth').innerText = '$' + (data.net_worth || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('buying-power').innerText = '$' + (data.buying_power || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('rank').innerText = '#' + (data.rank || 1) + ' / ' + (data.total_players || 1);
+
+                const tbody = document.getElementById('holdings-tbody');
+                if (!data.holdings || data.holdings.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">No active open positions.</td></tr>';
+                    document.getElementById('pos-count').innerText = '0 positions';
+                    return;
+                }
+
+                document.getElementById('pos-count').innerText = data.holdings.length + ' active';
+                tbody.innerHTML = data.holdings.map(h => {
+                    const pnlClass = h.gain_dollar >= 0 ? 'green' : 'red';
+                    const sign = h.gain_dollar >= 0 ? '+' : '';
+                    const isShort = (h.pos_type || '').toLowerCase() === 'short';
+                    return `
+                        <tr>
+                            <td><strong>${h.symbol}</strong></td>
+                            <td class="${isShort ? 'pos-type-short' : 'pos-type-buy'}">${isShort ? 'SHORT' : 'BUY'}</td>
+                            <td>${h.shares.toLocaleString()}</td>
+                            <td>$${h.price.toFixed(2)}</td>
+                            <td>$${h.value.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                            <td class="${pnlClass}">${sign}$${h.gain_dollar.toFixed(2)} (${sign}${h.gain_percent.toFixed(2)}%)</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Failed to fetch portfolio:", err);
+            }
+        }
+
+        async function submitOrder(action) {
+            const ticker = document.getElementById('order-ticker').value.trim().toUpperCase();
+            const shares = parseInt(document.getElementById('order-shares').value) || 25;
+            if (!ticker) return alert("Please specify a ticker symbol.");
+
+            try {
+                const res = await fetch('/webhook', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        secret: 'client_internal_auth',
+                        ticker: ticker,
+                        action: action,
+                        shares: shares,
+                        order_type: 'Market'
+                    })
+                });
+                const resp = await res.json();
+                appendLog(`[ORDER] ${action.toUpperCase()} ${shares}x ${ticker} -> ${resp.message || 'Queued'}`);
+            } catch (err) {
+                appendLog(`[ERROR] Execution error: ${err.message}`);
+            }
+        }
+
+        function appendLog(msg) {
+            const container = document.getElementById('logs-container');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            const now = new Date().toLocaleTimeString();
+            entry.innerText = `[${now}] ${msg}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        setInterval(fetchPortfolio, 5000);
+        fetchPortfolio();
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Playwright Browser Profile & Cookies (NEVER COMMIT AUTH SESSIONS)
+user_data/
+*.session
+
+# Logs and Runtime State
+*.log
+copy_strategy_vault.json
+screenshots/
+portfolio_test_now.png
+*.png
+!assets/*.png
+
+# OS artifacts
+.DS_Store
+Thumbs.db
