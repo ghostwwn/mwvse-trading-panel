@@ -17,6 +17,7 @@ from .engine.scraper import MarketWatchScraper
 from .engine.executor import OrderExecutor
 from .supervisor.autonomous_engine import AutonomousTradingEngine
 from .ui.tui import run_tui
+from .ui.mobile_pairing import print_mobile_qr
 
 def cmd_setup(args):
     """Run interactive setup wizard."""
@@ -30,6 +31,14 @@ def cmd_run(args):
     console.print(f"[bold cyan]🌐 Starting Web Trading Station at http://{host}:{port}/[/bold cyan]")
     console.print("[dim]Press Ctrl+C to terminate.[/dim]\n")
     uvicorn.run("mwvse_panel.ui.web.app:app", host=host, port=port, reload=args.reload)
+
+def cmd_mobile(args):
+    """Launch Mobile Trading Station accessible from iPhone/Android with QR Code pairing."""
+    print_banner()
+    port = args.port or settings.port
+    print_mobile_qr(port=port)
+    console.print("[dim]Starting network listener on 0.0.0.0... Press Ctrl+C to terminate.[/dim]\n")
+    uvicorn.run("mwvse_panel.ui.web.app:app", host="0.0.0.0", port=port)
 
 def cmd_terminal(args):
     """Launch the interactive Rich Terminal TUI."""
@@ -192,6 +201,11 @@ def app():
     p_run.add_argument("--port", type=int, default=None, help="Port (default: 8000)")
     p_run.add_argument("--reload", action="store_true", help="Enable auto-reload")
     p_run.set_defaults(func=cmd_run)
+
+    # mobile
+    p_mob = subparsers.add_parser("mobile", help="Launch Mobile Web Station on Wi-Fi with QR code pairing")
+    p_mob.add_argument("--port", type=int, default=None, help="Port (default: 8000)")
+    p_mob.set_defaults(func=cmd_mobile)
 
     # terminal
     p_term = subparsers.add_parser("terminal", help="Launch interactive Rich Terminal TUI")

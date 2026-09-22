@@ -64,20 +64,38 @@ python main.py doctor
 # 1. launch the full web trading workstation + autonomous supervisor
 python main.py run
 
-# 2. launch the rich terminal tui (live dashboard in your console)
+# 2. launch mobile station on wi-fi with qr code camera pairing
+python main.py mobile
+
+# 3. launch the rich terminal tui (live dashboard in your console)
 python main.py terminal
 
-# 3. run the standalone autonomous algorithmic trader
+# 4. run the standalone autonomous algorithmic trader
 python main.py auto
 
-# 4. print an instant snapshot of your net worth, rank, and positions
+# 5. print an instant snapshot of your net worth, rank, and positions
 python main.py status
 
-# 5. run environment diagnostics
+# 6. run environment diagnostics
 python main.py doctor
 ```
 
 web dashboard will be live at `http://127.0.0.1:8000/`.
+
+---
+
+## mobile version (iphone & android)
+
+to trade and supervise positions from your phone:
+
+```bash
+python main.py mobile
+```
+
+- **camera pairing**: points your terminal to your local Wi-Fi IP and renders an ASCII QR code. point your iPhone or Android camera at the screen to open the mobile workstation in 1 second.
+- **touch-first fintech ux**: Robinhood/TradingView mobile layout with fixed bottom navigation (`Wallet`, `Chart`, `Trade`, `Auto`, `Feed`), 1-tap position liquidation, and mobile charting.
+- **native app feel (pwa)**: tap **Share $\rightarrow$ Add to Home Screen** on Safari/Chrome to run it in full-screen standalone mode with no browser URL bar!
+- **auto-detection**: any mobile device loading `http://<ip>:8000/` is automatically served the mobile station.
 
 ---
 

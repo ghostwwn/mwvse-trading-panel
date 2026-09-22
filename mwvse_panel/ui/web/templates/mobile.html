@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MWVSE Mobile — by @ghostwwn</title>
+    
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MWVSE">
+    <meta name="theme-color" content="#080b11">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon.svg">
+    <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #080b11;
+            --bg-card: #0f1523;
+            --bg-elevated: #161f33;
+            --border-dim: #1f2c47;
+            --accent-cyan: #00f2fe;
+            --accent-blue: #4facfe;
+            --gain-green: #00e676;
+            --loss-red: #ff1744;
+            --gold: #ffd600;
+            --text-primary: #f0f4fc;
+            --text-secondary: #8899b7;
+            --text-muted: #4e6080;
+            --safe-bottom: env(safe-area-inset-bottom, 16px);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Top App Bar */
+        .mobile-header {
+            background: rgba(15, 21, 35, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-dim);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 50;
+        }
+        .brand-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .brand-logo {
+            width: 22px;
+            height: 22px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 800;
+            color: #000;
+        }
+        .brand-name {
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+        .author-badge {
+            font-size: 10px;
+            color: var(--text-secondary);
+            background: var(--bg-elevated);
+            padding: 2px 6px;
+            border-radius: 10px;
+            text-decoration: none;
+            border: 1px solid var(--border-dim);
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .rank-pill {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gold);
+            background: rgba(255, 214, 0, 0.1);
+            padding: 3px 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 214, 0, 0.2);
+        }
+
+        /* Scrollable Content Container */
+        .tab-content-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 16px;
+            padding-bottom: calc(75px + var(--safe-bottom));
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; animation: fadeIn 0.15s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Wallet Header Widget */
+        .wallet-banner {
+            background: linear-gradient(180deg, var(--bg-card), var(--bg-elevated));
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .wallet-caption {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .wallet-networth {
+            font-size: 28px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            margin: 4px 0 10px;
+            letter-spacing: -0.5px;
+        }
+        .wallet-substats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .substat-item .val {
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Section Titles */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        /* Position Cards */
+        .position-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: transform 0.1s;
+        }
+        .position-card:active { transform: scale(0.99); }
+        .pos-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .pos-sym-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pos-symbol {
+            font-size: 16px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .pos-badge {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .pos-badge.buy { background: rgba(0, 230, 118, 0.15); color: var(--gain-green); }
+        .pos-badge.short { background: rgba(255, 23, 68, 0.15); color: var(--loss-red); }
+
+        .pos-pnl {
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: right;
+        }
+        .pos-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .close-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-dim);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+        }
+        .close-btn:active { background: var(--loss-red); }
+
+        /* Trade Form */
+        .trade-desk-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .ticker-scroller {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+            scrollbar-width: none;
+        }
+        .ticker-scroller::-webkit-scrollbar { display: none; }
+        .ticker-pill {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-dim);
+            color: var(--text-primary);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .ticker-pill.active {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            background: rgba(0, 242, 254, 0.1);
+        }
+
+        .input-box {
+            margin-bottom: 14px;
+        }
+        .input-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+        .stepper {
+            display: flex;
+            align-items: center;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .stepper-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            width: 48px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .stepper-btn:active { background: rgba(255,255,255,0.1); }
+        .stepper-input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stepper-input:focus { outline: none; }
+
+        .big-action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .mobile-action-btn {
+            padding: 14px;
+            border-radius: 10px;
+            border: none;
+            font-size: 13px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        .mobile-action-btn:active { transform: scale(0.97); }
+        .btn-buy-lg { background: var(--gain-green); color: #000; }
+        .btn-sell-lg { background: #26a69a; color: #fff; }
+        .btn-short-lg { background: var(--loss-red); color: #fff; }
+        .btn-cover-lg { background: #ab47bc; color: #fff; }
+
+        /* Auto-Pilot Panel */
+        .autopilot-banner {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--bg-elevated);
+            border: 1px solid var(--border-dim);
+            transition: .3s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px; width: 20px;
+            left: 4px; bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--gain-green); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .strategy-chips {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .strat-chip {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-dim);
+            color: var(--text-secondary);
+            padding: 10px 6px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+        }
+        .strat-chip.active {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            background: rgba(0, 242, 254, 0.1);
+        }
+
+        /* Logs Feed */
+        .logs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+        .log-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Fixed Bottom Nav Bar */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 21, 35, 0.95);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border-dim);
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            padding-bottom: var(--safe-bottom);
+            z-index: 100;
+        }
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 0;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+        .nav-btn.active {
+            color: var(--accent-cyan);
+        }
+        .nav-icon { font-size: 18px; }
+
+        .green { color: var(--gain-green); }
+        .red { color: var(--loss-red); }
+    </style>
+</head>
+<body>
+    <!-- Top Header -->
+    <div class="mobile-header">
+        <div class="brand-pill">
+            <div class="brand-logo">⚡</div>
+            <span class="brand-name">MWVSE</span>
+            <a href="https://github.com/ghostwwn" target="_blank" class="author-badge">by @ghostwwn</a>
+        </div>
+        <div class="header-meta">
+            <span class="rank-pill" id="m-rank">#1 / 1</span>
+        </div>
+    </div>
+
+    <!-- Scrollable Workspace -->
+    <div class="tab-content-wrapper">
+        <!-- 1. Portfolio Tab -->
+        <div id="tab-portfolio" class="tab-pane active">
+            <div class="wallet-banner">
+                <div class="wallet-caption">Account Net Worth</div>
+                <div class="wallet-networth" id="m-networth">$100,000.00</div>
+                <div class="wallet-substats">
+                    <div class="substat-item">
+                        <div class="wallet-caption">Buying Power</div>
+                        <div class="val green" id="m-buyingpower">$200,000.00</div>
+                    </div>
+                    <div class="substat-item">
+                        <div class="wallet-caption">Cash Remaining</div>
+                        <div class="val" id="m-cash">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <span class="section-title">Open Positions</span>
+                <span id="m-pos-count" style="font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono'">0 active</span>
+            </div>
+
+            <div id="m-positions-container">
+                <div style="text-align:center;color:var(--text-muted);padding:32px;font-size:12px;">Loading positions...</div>
+            </div>
+        </div>
+
+        <!-- 2. Charts Tab -->
+        <div id="tab-chart" class="tab-pane">
+            <div class="section-header">
+                <span class="section-title">TradingView Mobile Chart</span>
+            </div>
+            <div style="height:calc(100vh - 190px);border-radius:12px;overflow:hidden;border:1px solid var(--border-dim);">
+                <div id="tv_mobile_chart" style="height:100%;width:100%"></div>
+                <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+            </div>
+        </div>
+
+        <!-- 3. Trade Desk Tab -->
+        <div id="tab-trade" class="tab-pane">
+            <div class="trade-desk-card">
+                <div class="input-label">Select Symbol</div>
+                <div class="ticker-scroller">
+                    <div class="ticker-pill active" onclick="setTicker('TSLA', this)">TSLA</div>
+                    <div class="ticker-pill" onclick="setTicker('TQQQ', this)">TQQQ</div>
+                    <div class="ticker-pill" onclick="setTicker('NVDA', this)">NVDA</div>
+                    <div class="ticker-pill" onclick="setTicker('MSTR', this)">MSTR</div>
+                    <div class="ticker-pill" onclick="setTicker('ARM', this)">ARM</div>
+                    <div class="ticker-pill" onclick="setTicker('PLTR', this)">PLTR</div>
+                    <div class="ticker-pill" onclick="setTicker('GOOGL', this)">GOOGL</div>
+                    <div class="ticker-pill" onclick="setTicker('AAPL', this)">AAPL</div>
+                </div>
+
+                <div class="input-box">
+                    <div class="input-label">Shares Quantity</div>
+                    <div class="stepper">
+                        <button class="stepper-btn" onclick="stepQty(-25)">-</button>
+                        <input type="number" id="m-order-qty" class="stepper-input" value="25">
+                        <button class="stepper-btn" onclick="stepQty(25)">+</button>
+                    </div>
+                </div>
+
+                <div class="big-action-grid">
+                    <button class="mobile-action-btn btn-buy-lg" onclick="sendOrder('buy')">Buy Long</button>
+                    <button class="mobile-action-btn btn-sell-lg" onclick="sendOrder('sell')">Close / Sell</button>
+                    <button class="mobile-action-btn btn-short-lg" onclick="sendOrder('short')">Sell Short</button>
+                    <button class="mobile-action-btn btn-cover-lg" onclick="sendOrder('cover')">Buy Cover</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Auto-Pilot Tab -->
+        <div id="tab-autopilot" class="tab-pane">
+            <div class="autopilot-banner">
+                <div class="toggle-row">
+                    <div>
+                        <div style="font-size:15px;font-weight:800;">Autonomous Engine</div>
+                        <div style="font-size:11px;color:var(--text-muted);">Momentum scans & auto-entries</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="m-auto-toggle" onchange="toggleAutopilotMobile()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="input-label" style="margin-top:12px;">Active Preset</div>
+                <div class="strategy-chips">
+                    <div class="strat-chip active" id="chip-hunter">HUNTER<br><span style="font-size:9px;opacity:0.7">Breakouts</span></div>
+                    <div class="strat-chip" id="chip-sniper">SNIPER<br><span style="font-size:9px;opacity:0.7">Tight TP/SL</span></div>
+                    <div class="strat-chip" id="chip-balanced">BALANCED<br><span style="font-size:9px;opacity:0.7">Core Scalp</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Feed Tab -->
+        <div id="tab-feed" class="tab-pane">
+            <div class="section-header">
+                <span class="section-title">Execution Feed</span>
+            </div>
+            <div class="logs-list" id="m-logs-container">
+                <div class="log-item">[SYSTEM] MWVSE Mobile Initialized.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Tab Navigation -->
+    <div class="bottom-nav">
+        <button class="nav-btn active" onclick="switchTab('portfolio', this)">
+            <span class="nav-icon">💼</span>
+            <span>Wallet</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('chart', this)">
+            <span class="nav-icon">📈</span>
+            <span>Chart</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('trade', this)">
+            <span class="nav-icon">⚡</span>
+            <span>Trade</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('autopilot', this)">
+            <span class="nav-icon">🤖</span>
+            <span>Auto</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('feed', this)">
+            <span class="nav-icon">📜</span>
+            <span>Feed</span>
+        </button>
+    </div>
+
+    <script>
+        let selectedTicker = 'TSLA';
+        let tvWidget = null;
+
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            el.classList.add('active');
+
+            if (tabId === 'chart' && !tvWidget) {
+                initChart();
+            }
+        }
+
+        function initChart() {
+            tvWidget = new TradingView.widget({
+                "autosize": true,
+                "symbol": "NASDAQ:" + selectedTicker,
+                "interval": "5",
+                "timezone": "America/New_York",
+                "theme": "dark",
+                "style": "1",
+                "locale": "en",
+                "toolbar_bg": "#0f1523",
+                "enable_publishing": false,
+                "hide_top_toolbar": false,
+                "container_id": "tv_mobile_chart"
+            });
+        }
+
+        function setTicker(sym, el) {
+            selectedTicker = sym;
+            document.querySelectorAll('.ticker-pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            if (tvWidget) {
+                initChart();
+            }
+        }
+
+        function stepQty(amt) {
+            const input = document.getElementById('m-order-qty');
+            let val = parseInt(input.value) || 25;
+            val = Math.max(1, val + amt);
+            input.value = val;
+        }
+
+        async function fetchPortfolio() {
+            try {
+                const res = await fetch('/api/portfolio');
+                const data = await res.json();
+                document.getElementById('m-networth').innerText = '$' + (data.net_worth || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('m-buyingpower').innerText = '$' + (data.buying_power || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('m-cash').innerText = '$' + (data.cash || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('m-rank').innerText = '#' + (data.rank || 1) + ' / ' + (data.total_players || 1);
+
+                const container = document.getElementById('m-positions-container');
+                if (!data.holdings || data.holdings.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;font-size:12px;">No active open positions.</div>';
+                    document.getElementById('m-pos-count').innerText = '0 active';
+                    return;
+                }
+
+                document.getElementById('m-pos-count').innerText = data.holdings.length + ' active';
+                container.innerHTML = data.holdings.map(h => {
+                    const isShort = (h.pos_type || '').toLowerCase() === 'short';
+                    const pnlClass = h.gain_dollar >= 0 ? 'green' : 'red';
+                    const sign = h.gain_dollar >= 0 ? '+' : '';
+                    const closeAction = isShort ? 'cover' : 'sell';
+
+                    return `
+                        <div class="position-card">
+                            <div class="pos-top">
+                                <div class="pos-sym-group">
+                                    <span class="pos-symbol">${h.symbol}</span>
+                                    <span class="pos-badge ${isShort ? 'short' : 'buy'}">${isShort ? 'SHORT' : 'BUY'}</span>
+                                </div>
+                                <div class="pos-pnl ${pnlClass}">${sign}$${h.gain_dollar.toFixed(2)} (${sign}${h.gain_percent.toFixed(2)}%)</div>
+                            </div>
+                            <div class="pos-bottom">
+                                <span>${h.shares.toLocaleString()} shs • $${h.price.toFixed(2)} ($${h.value.toLocaleString(undefined, {minimumFractionDigits:2})})</span>
+                                <button class="close-btn" onclick="executeQuickClose('${h.symbol}', '${closeAction}', ${h.shares})">Close</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Mobile sync error:", err);
+            }
+        }
+
+        async function sendOrder(action) {
+            const qty = parseInt(document.getElementById('m-order-qty').value) || 25;
+            try {
+                const res = await fetch('/webhook', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        secret: 'client_internal_auth',
+                        ticker: selectedTicker,
+                        action: action,
+                        shares: qty,
+                        order_type: 'Market'
+                    })
+                });
+                const data = await res.json();
+                appendMobileLog(`[ORDER] ${action.toUpperCase()} ${qty}x ${selectedTicker} -> ${data.message || 'Queued'}`);
+                if (navigator.vibrate) navigator.vibrate(50);
+            } catch (err) {
+                appendMobileLog(`[ERROR] Order failed: ${err.message}`);
+            }
+        }
+
+        async function executeQuickClose(sym, action, shares) {
+            try {
+                const res = await fetch('/webhook', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        secret: 'client_internal_auth',
+                        ticker: sym,
+                        action: action,
+                        shares: shares,
+                        order_type: 'Market'
+                    })
+                });
+                const data = await res.json();
+                appendMobileLog(`[CLOSE] ${sym} -> ${data.message || 'Queued'}`);
+                if (navigator.vibrate) navigator.vibrate([40, 40, 40]);
+                fetchPortfolio();
+            } catch (err) {
+                appendMobileLog(`[ERROR] Close failed: ${err.message}`);
+            }
+        }
+
+        async function toggleAutopilotMobile() {
+            try {
+                const res = await fetch('/api/autopilot/toggle', {method: 'POST'});
+                const data = await res.json();
+                document.getElementById('m-auto-toggle').checked = data.active;
+                if (navigator.vibrate) navigator.vibrate(30);
+            } catch (err) {}
+        }
+
+        async function fetchAutopilotStatus() {
+            try {
+                const res = await fetch('/api/autopilot/status');
+                const data = await res.json();
+                document.getElementById('m-auto-toggle').checked = data.active;
+            } catch (err) {}
+        }
+
+        function appendMobileLog(msg) {
+            const container = document.getElementById('m-logs-container');
+            const item = document.createElement('div');
+            item.className = 'log-item';
+            const now = new Date().toLocaleTimeString();
+            item.innerText = `[${now}] ${msg}`;
+            container.prepend(item);
+        }
+
+        setInterval(fetchPortfolio, 5000);
+        fetchPortfolio();
+        fetchAutopilotStatus();
+    </script>
+</body>
+</html>

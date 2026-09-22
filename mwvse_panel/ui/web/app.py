@@ -5,11 +5,13 @@
 # ──────────────────────────────────────────────────────────────────────────────
 """
 import asyncio
+import json
 import time
 from pathlib import Path
 from typing import Dict, Any, List
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from ...core.config import settings
 from ...core.models import TradeOrder, PortfolioSnapshot
@@ -19,13 +21,19 @@ from ...engine.scraper import MarketWatchScraper
 from ...supervisor.autonomous_engine import AutonomousTradingEngine
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 DASHBOARD_FILE = TEMPLATES_DIR / "dashboard.html"
+MOBILE_FILE = TEMPLATES_DIR / "mobile.html"
 
 app = FastAPI(
     title="MWVSE Trading Panel",
     description="Algorithmic day-trading, autonomous execution, and risk supervisor for MarketWatch VSE. Built by @ghostwwn.",
     version="2.5.0"
 )
+
+# Mount static files for PWA icons & manifest
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # Global runtime state
 trade_queue: asyncio.Queue = asyncio.Queue()
@@ -69,7 +77,6 @@ async def order_queue_worker():
             status = res.get("status", "unknown").upper()
             msg = res.get("message", "")
             add_log(f"[{status}] {action.upper()} {order.ticker} -> {msg}")
-            # Refresh portfolio immediately
             asyncio.create_task(scraper.fetch_portfolio())
         except Exception as e:
             logger.error(f"Execution error on {order.ticker}: {e}")
@@ -84,9 +91,7 @@ async def autonomous_supervisor_loop():
             continue
 
         try:
-            # 1. Harvest Take-Profit & Stop-Loss
             await auto_engine.evaluate_exits(cached_portfolio)
-            # 2. Autonomous Breakout Scanner & Auto-Entry
             await auto_engine.evaluate_entries(cached_portfolio)
         except Exception as e:
             logger.warning(f"Autonomous supervisor error: {e}")
@@ -99,11 +104,30 @@ async def on_startup():
     add_log(f"⚡ MWVSE Workstation online. Autonomous Engine: ACTIVE ({settings.autopilot_strategy})")
 
 @app.get("/", response_class=HTMLResponse)
-async def serve_dashboard():
-    if DASHBOARD_FILE.exists():
-        with open(DASHBOARD_FILE, "r", encoding="utf-8") as f:
+async def serve_dashboard(request: Request):
+    ua = request.headers.get("user-agent", "").lower()
+    is_mobile = any(m in ua for m in ["iphone", "android", "ipad", "mobile"])
+
+    target_file = MOBILE_FILE if is_mobile else DASHBOARD_FILE
+    if target_file.exists():
+        with open(target_file, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
-    return HTMLResponse("<h1>MWVSE Panel Dashboard</h1><p>Dashboard HTML not found.</p>")
+    return HTMLResponse("<h1>MWVSE Panel Dashboard</h1><p>Template not found.</p>")
+
+@app.get("/mobile", response_class=HTMLResponse)
+async def serve_mobile():
+    if MOBILE_FILE.exists():
+        with open(MOBILE_FILE, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse("<h1>MWVSE Mobile Station</h1><p>Mobile template not found.</p>")
+
+@app.get("/manifest.json")
+async def get_manifest():
+    manifest_path = STATIC_DIR / "manifest.json"
+    if manifest_path.exists():
+        with open(manifest_path, "r") as f:
+            return JSONResponse(content=json.load(f))
+    return JSONResponse(content={})
 
 @app.get("/api/portfolio")
 async def get_portfolio():
