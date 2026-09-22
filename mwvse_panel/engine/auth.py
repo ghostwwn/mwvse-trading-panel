@@ -36,8 +36,25 @@ except ImportError:
                 return default
             return ans in ["y", "yes"]
 
+import subprocess
+import sys
+
 from ..core.config import settings, APP_DIR
 from ..core.logger import console, logger
+
+def ensure_playwright_browser():
+    """Validates Playwright Chromium is installed, automatically installing if missing."""
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            exe = p.chromium.executable_path
+            if not Path(exe).exists():
+                raise FileNotFoundError("Chromium executable path missing")
+    except Exception:
+        logger.warning("Chromium executable missing. Auto-installing Playwright Chromium...")
+        console.print("[yellow]📦 Installing Playwright Chromium browser binary (one-time setup)...[/yellow]")
+        subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
+        console.print("[green]✅ Chromium successfully installed![/green]")
 
 class AuthManager:
     """Manages MarketWatch login sessions, cookies, and interactive setup."""
@@ -47,6 +64,7 @@ class AuthManager:
 
     async def verify_session(self) -> bool:
         """Checks whether the saved profile in user_data/ has an active MarketWatch login."""
+        ensure_playwright_browser()
         async with async_playwright() as p:
             try:
                 context = await p.chromium.launch_persistent_context(
@@ -73,6 +91,7 @@ class AuthManager:
         Opens a visible browser so the user can log in with Google, Apple, or Email.
         Automatically detects when login succeeds and saves session cookies!
         """
+        ensure_playwright_browser()
         console.print("\n[bold cyan]🔐 LAUNCHING FOOLPROOF LOGIN WIZARD...[/bold cyan]")
         console.print("[dim]A browser window will open. Simply log in to MarketWatch in that window.[/dim]")
         console.print("[dim]Once you are logged in, this script will automatically save your session and continue.[/dim]\n")

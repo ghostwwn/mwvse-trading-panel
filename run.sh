@@ -35,6 +35,11 @@ if ! python -c "import playwright, fastapi, rich, qrcode" &> /dev/null; then
     echo "📦 Installing required dependencies..."
     pip install -q --upgrade pip
     pip install -q -r requirements.txt
+fi
+
+# 3b. Verify Playwright Chromium binary is installed
+if ! python -c "from playwright.sync_api import sync_playwright; p=sync_playwright().start(); import os; os.path.exists(p.chromium.executable_path) or exit(1); p.stop()" &> /dev/null; then
+    echo "🌐 Downloading Chromium browser for Playwright automation..."
     playwright install chromium
 fi
 

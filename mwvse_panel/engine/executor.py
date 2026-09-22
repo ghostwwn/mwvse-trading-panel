@@ -14,6 +14,7 @@ from playwright.async_api import async_playwright
 from ..core.config import settings, APP_DIR
 from ..core.models import TradeAction, ExecutionResult
 from ..core.logger import logger
+from .auth import ensure_playwright_browser
 
 class OrderExecutor:
     """Executes trade orders against MarketWatch Virtual Stock Exchange via Playwright."""
@@ -40,6 +41,8 @@ class OrderExecutor:
         ticker = ticker.upper().strip()
         action = action.lower().strip()
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        ensure_playwright_browser()
 
         async with async_playwright() as p:
             try:

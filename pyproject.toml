@@ -50,3 +50,9 @@ mwvse = "mwvse_panel.cli:app"
 
 [tool.setuptools.packages.find]
 include = ["mwvse_panel*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
