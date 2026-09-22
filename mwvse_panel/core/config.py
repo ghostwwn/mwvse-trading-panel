@@ -51,22 +51,21 @@ class Settings(BaseSettings):
     port: int = Field(default_factory=lambda: int(os.getenv("PORT", "8000")), alias="PORT")
     webhook_secret: str = Field(default_factory=lambda: os.getenv("WEBHOOK_SECRET", "mwvse_secret_key_change_me"), alias="WEBHOOK_SECRET")
 
-    # 3. Autonomous Supervisor
+    # 3. Autonomous Trading & Supervisor Engine
     autopilot_strategy: str = Field(default_factory=lambda: os.getenv("AUTOPILOT_STRATEGY", "HUNTER"), alias="AUTOPILOT_STRATEGY")
     autopilot_active: bool = Field(default_factory=lambda: os.getenv("AUTOPILOT_ACTIVE", "true").lower() == "true", alias="AUTOPILOT_ACTIVE")
     autopilot_scan_interval: int = Field(default_factory=lambda: int(os.getenv("AUTOPILOT_SCAN_INTERVAL", "30")), alias="AUTOPILOT_SCAN_INTERVAL")
     autopilot_harvest_interval: int = Field(default_factory=lambda: int(os.getenv("AUTOPILOT_HARVEST_INTERVAL", "15")), alias="AUTOPILOT_HARVEST_INTERVAL")
     max_concurrent_positions: int = Field(default_factory=lambda: int(os.getenv("MAX_CONCURRENT_POSITIONS", "10")), alias="MAX_CONCURRENT_POSITIONS")
     default_shares: int = Field(default_factory=lambda: int(os.getenv("DEFAULT_SHARES", "25")), alias="DEFAULT_SHARES")
+    allocation_per_trade_dollars: float = Field(default_factory=lambda: float(os.getenv("ALLOCATION_PER_TRADE_DOLLARS", "15000.0")), alias="ALLOCATION_PER_TRADE_DOLLARS")
     allow_shorting: bool = Field(default_factory=lambda: os.getenv("ALLOW_SHORTING", "true").lower() == "true", alias="ALLOW_SHORTING")
     min_conviction_threshold: int = Field(default_factory=lambda: int(os.getenv("MIN_CONVICTION_THRESHOLD", "75")), alias="MIN_CONVICTION_THRESHOLD")
     ticker_cooldown_seconds: int = Field(default_factory=lambda: int(os.getenv("TICKER_COOLDOWN_SECONDS", "600")), alias="TICKER_COOLDOWN_SECONDS")
+    take_profit_pct: float = Field(default_factory=lambda: float(os.getenv("TAKE_PROFIT_PCT", "2.5")), alias="TAKE_PROFIT_PCT")
+    stop_loss_pct: float = Field(default_factory=lambda: float(os.getenv("STOP_LOSS_PCT", "-2.0")), alias="STOP_LOSS_PCT")
 
-    # 4. Compounding Copy Trader
-    copy_vault_starting_capital: float = Field(default_factory=lambda: float(os.getenv("COPY_VAULT_STARTING_CAPITAL", "20000.0")), alias="COPY_VAULT_STARTING_CAPITAL")
-    copy_scan_interval_seconds: int = Field(default_factory=lambda: int(os.getenv("COPY_SCAN_INTERVAL_SECONDS", "10")), alias="COPY_SCAN_INTERVAL_SECONDS")
-
-    # 5. Playwright & MarketWatch Auth
+    # 4. Playwright & MarketWatch Auth
     mw_email: Optional[str] = Field(default_factory=lambda: os.getenv("MW_EMAIL"), alias="MW_EMAIL")
     mw_password: Optional[str] = Field(default_factory=lambda: os.getenv("MW_PASSWORD"), alias="MW_PASSWORD")
     mw_headless: bool = Field(default_factory=lambda: os.getenv("MW_HEADLESS", "true").lower() == "true", alias="MW_HEADLESS")
@@ -77,11 +76,9 @@ class Settings(BaseSettings):
     def parse_slug_from_input(cls, v: str) -> str:
         if not v:
             return "bayonne-high-school-fall-2026-stock-market-game"
-        # If user pasted a full URL, e.g. https://www.marketwatch.com/games/my-game/portfolio?pub=xyz
         match = re.search(r"/games/([^/?#]+)", v)
         if match:
             return match.group(1).strip()
-        # Clean slug
         clean = re.sub(r"[^a-zA-Z0-9_-]", "", v).strip()
         return clean or "bayonne-high-school-fall-2026-stock-market-game"
 

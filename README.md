@@ -1,10 +1,10 @@
 # mwvse-trading-panel
 
-algorithmic trading workstation, automated position supervisor, and sub-second leaderboard copy-trader for the MarketWatch Virtual Stock Exchange (VSE).
+algorithmic trading workstation, automated market scanner, and autonomous position supervisor for the MarketWatch Virtual Stock Exchange (VSE).
 
 ![demo](assets/demo.png)
 
-i built this because manual day-trading on MarketWatch's web UI during high-velocity volatility is painfully slow, clunky, and prone to slippage. this panel gives you a high-frequency trading desk with TradingView charting, 1-click execution, an autonomous risk guardian (take-profit & stop-loss trailing cuts), and an automated copy-trader that mirrors tournament leaders' fills into an isolated compounding vault.
+i built this because manual day-trading on MarketWatch's web UI during high-velocity volatility is painfully slow, clunky, and prone to slippage. this panel gives you a high-frequency trading desk with TradingView charting, 1-click execution, and an **autonomous algorithmic engine** that actively scans for breakout momentum, auto-enters high-conviction setups, and protects your capital with dynamic take-profit and stop-loss trailing cuts.
 
 > **disclaimer**: this is an independent, educational open-source project. it is **not affiliated, associated, authorized, endorsed by, or in any way officially connected with MarketWatch, Dow Jones & Company, Inc.**, or any of their subsidiaries or affiliates. provided **"as is"** without warranty of any kind.
 
@@ -61,14 +61,14 @@ python main.py doctor
 ## usage
 
 ```bash
-# 1. launch the full web trading workstation + supervisor engine
+# 1. launch the full web trading workstation + autonomous supervisor
 python main.py run
 
-# 2. launch the rich terminal tui (live layout in your console)
+# 2. launch the rich terminal tui (live dashboard in your console)
 python main.py terminal
 
-# 3. run the standalone leaderboard copy-trader daemon
-python main.py copy
+# 3. run the standalone autonomous algorithmic trader
+python main.py auto
 
 # 4. print an instant snapshot of your net worth, rank, and positions
 python main.py status
@@ -84,10 +84,10 @@ web dashboard will be live at `http://127.0.0.1:8000/`.
 ## how it works (roughly)
 
 1. **headless browser execution**: uses playwright with persistent user profiles to execute `BUY`, `SELL`, `SELL SHORT`, and `BUY TO COVER` orders directly into the VSE engine.
-2. **anti-caching & sub-second polling**: fetches tournament transaction ledgers with cache-busting timestamps (`_cb=<ts>`) and `no-cache` HTTP headers to prevent stale DOM reads.
-3. **chronological ordering**: reverses raw transaction feeds so that opening legs (`BUY`/`SHORT`) always execute before closing legs (`SELL`/`COVER`), preventing "cannot sell 0 shares" rejections.
-4. **dedicated compounding vault**: isolates a designated pool of capital (e.g. $20k) for copy-trading. all realized profits from mirror trades automatically compound and scale subsequent trade sizes.
-5. **autonomous risk guardian**: evaluates open positions every 15 seconds. triggers automatic market liquidations on take-profit spikes (+2.5% to +3.5%) or stop-loss drawdowns (-2.0%).
+2. **confluence momentum scanner**: continuously evaluates a tournament universe of high-beta tech leaders (`TSLA`, `TQQQ`, `NVDA`, `MSTR`, `ARM`, `PLTR`, etc.) for breakout volume, EMA crossovers, and resistance breaks.
+3. **autonomous auto-entry**: automatically sizes and queues market entries for qualifying setups ($\ge 75\%$ confidence) while strictly enforcing position limits and per-ticker cooldowns.
+4. **autonomous risk guardian**: evaluates open positions every 15 seconds. triggers automatic market liquidations on take-profit spikes (+2.5% to +3.5%) or stop-loss drawdowns (-2.0%).
+5. **anti-caching live scraper**: fetches tournament rankings and wallet metrics with cache-busting timestamps (`_cb=<ts>`) and `no-cache` HTTP headers to prevent stale DOM reads.
 
 ---
 
@@ -130,9 +130,11 @@ all tunables can be configured in `.env` or passed via CLI:
 
 - `MW_GAME_SLUG`: your MarketWatch tournament slug
 - `AUTOPILOT_STRATEGY`: `HUNTER` (momentum breakouts), `SNIPER` (tight scalps), or `BALANCED`
+- `AUTOPILOT_ACTIVE`: `true` or `false` (can be toggled live via Web UI)
+- `AUTOPILOT_SCAN_INTERVAL`: seconds between market breakout scans (default `30`)
 - `AUTOPILOT_HARVEST_INTERVAL`: seconds between TP/SL portfolio sweeps (default `15`)
-- `COPY_VAULT_STARTING_CAPITAL`: initial capital for copy vault (default `$20,000.00`)
-- `COPY_SCAN_INTERVAL_SECONDS`: poller frequency for leader trades (default `10`)
+- `MAX_CONCURRENT_POSITIONS`: maximum concurrent positions held (default `10`)
+- `ALLOCATION_PER_TRADE_DOLLARS`: dollar allocation per autonomous entry (default `$15,000.00`)
 
 ---
 

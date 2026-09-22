@@ -69,19 +69,6 @@ class PortfolioSnapshot(BaseModel):
     leaderboard: List[LeaderboardEntry] = []
     updated_at: str = ""
 
-class VaultPosition(BaseModel):
-    action: str
-    entry_price: float
-    allocated: float
-    trader: str
-    time: str
-
-class VaultState(BaseModel):
-    base_capital: float = 20000.0
-    current_capital: float = 20000.0
-    total_realized_profit: float = 0.0
-    open_positions: Dict[str, Any] = {}
-
 class AISignal(BaseModel):
     target_ticker: str
     action: str  # BUY or SHORT

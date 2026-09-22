@@ -302,6 +302,10 @@
             <a href="https://github.com/ghostwwn/mwvse-trading-panel" target="_blank" class="author-tag">Built by @ghostwwn</a>
         </div>
         <div class="header-stats">
+            <button id="autopilot-btn" onclick="toggleAutopilot()" style="background:rgba(0,230,118,0.15);border:1px solid var(--gain-green);color:var(--gain-green);font-family:'JetBrains Mono';font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;">
+                <span id="autopilot-dot" style="width:8px;height:8px;background:var(--gain-green);border-radius:50%;display:inline-block;"></span>
+                <span id="autopilot-txt">AUTO-PILOT: ACTIVE</span>
+            </button>
             <div class="stat-item">
                 <span class="stat-label">Net Worth</span>
                 <span class="stat-val" id="net-worth">$100,000.00</span>
@@ -494,8 +498,46 @@
             container.scrollTop = container.scrollHeight;
         }
 
+        async function toggleAutopilot() {
+            try {
+                const res = await fetch('/api/autopilot/toggle', {method: 'POST'});
+                const data = await res.json();
+                updateAutopilotUI(data.active);
+            } catch (err) {
+                console.error("Failed to toggle autopilot:", err);
+            }
+        }
+
+        async function fetchAutopilotStatus() {
+            try {
+                const res = await fetch('/api/autopilot/status');
+                const data = await res.json();
+                updateAutopilotUI(data.active);
+            } catch (err) {}
+        }
+
+        function updateAutopilotUI(isActive) {
+            const btn = document.getElementById('autopilot-btn');
+            const dot = document.getElementById('autopilot-dot');
+            const txt = document.getElementById('autopilot-txt');
+            if (isActive) {
+                btn.style.background = 'rgba(0,230,118,0.15)';
+                btn.style.borderColor = 'var(--gain-green)';
+                btn.style.color = 'var(--gain-green)';
+                dot.style.background = 'var(--gain-green)';
+                txt.innerText = 'AUTO-PILOT: ACTIVE';
+            } else {
+                btn.style.background = 'rgba(255,23,68,0.15)';
+                btn.style.borderColor = 'var(--loss-red)';
+                btn.style.color = 'var(--loss-red)';
+                dot.style.background = 'var(--loss-red)';
+                txt.innerText = 'AUTO-PILOT: PAUSED';
+            }
+        }
+
         setInterval(fetchPortfolio, 5000);
         fetchPortfolio();
+        fetchAutopilotStatus();
     </script>
 </body>
 </html>

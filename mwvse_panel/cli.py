@@ -14,7 +14,8 @@ from .core.config import settings, APP_DIR
 from .core.logger import console, print_banner
 from .engine.auth import run_setup_wizard, AuthManager
 from .engine.scraper import MarketWatchScraper
-from .copier.copy_engine import LeaderCopyEngine
+from .engine.executor import OrderExecutor
+from .supervisor.autonomous_engine import AutonomousTradingEngine
 from .ui.tui import run_tui
 
 def cmd_setup(args):
@@ -35,14 +36,53 @@ def cmd_terminal(args):
     print_banner()
     run_tui()
 
-def cmd_copy(args):
-    """Launch the standalone Leaderboard Copy-Trading Engine."""
+async def auto_loop():
+    scraper = MarketWatchScraper()
+    executor = OrderExecutor()
+    queue = asyncio.Queue()
+    auto_engine = AutonomousTradingEngine(queue=queue)
+
+    console.print("[bold green]🤖 Autonomous Algorithmic Engine Active![/bold green]")
+    console.print(f"[dim]Strategy: {settings.autopilot_strategy} | Max Positions: {settings.max_concurrent_positions}[/dim]\n")
+
+    async def worker():
+        while True:
+            order = await queue.get()
+            try:
+                action = order.action.value if hasattr(order.action, "value") else str(order.action)
+                console.print(f"⚡ [AUTO-EXECUTE] Submitting {action.upper()} {order.ticker} to MarketWatch...")
+                res = await executor.execute_trade(
+                    ticker=order.ticker,
+                    action=action,
+                    shares=order.shares,
+                    dollar_amount=order.dollar_amount,
+                    full_port=order.full_port,
+                    order_type="Market"
+                )
+                console.print(f"   [{res.get('status').upper()}] {res.get('message')}")
+            except Exception as e:
+                console.print(f"   [bold red]Execution error: {e}[/bold red]")
+            finally:
+                queue.task_done()
+
+    asyncio.create_task(worker())
+
+    while True:
+        try:
+            snapshot = await scraper.fetch_portfolio()
+            await auto_engine.evaluate_exits(snapshot)
+            await auto_engine.evaluate_entries(snapshot)
+        except Exception as e:
+            console.print(f"[yellow]Auto loop cycle warning: {e}[/yellow]")
+        await asyncio.sleep(settings.autopilot_scan_interval)
+
+def cmd_auto(args):
+    """Launch the standalone Autonomous Trading Engine."""
     print_banner()
-    engine = LeaderCopyEngine()
     try:
-        asyncio.run(engine.run())
+        asyncio.run(auto_loop())
     except KeyboardInterrupt:
-        console.print("\n[yellow]Stopping copy-trader daemon.[/yellow]\n")
+        console.print("\n[yellow]Stopping autonomous trading engine.[/yellow]\n")
 
 def cmd_status(args):
     """Print an instant snapshot of your account net worth, buying power, and active positions."""
@@ -105,6 +145,7 @@ def cmd_doctor(args):
         console.print(f"⚙️ Config File: [bold green]Found ({env_file.name})[/bold green]")
         console.print(f"   • Game Slug: [cyan]{settings.mw_game_slug}[/cyan]")
         console.print(f"   • Webhook Secret: [dim]{settings.webhook_secret[:4]}***[/dim]")
+        console.print(f"   • Strategy Preset: [bold green]{settings.autopilot_strategy}[/bold green]")
     else:
         console.print("⚙️ Config File: [bold yellow]Missing (.env)[/bold yellow] — Run 'python main.py setup' to generate it!")
 
@@ -137,7 +178,7 @@ def cmd_doctor(args):
 def app():
     parser = argparse.ArgumentParser(
         prog="mwvse",
-        description="⚡ MWVSE Trading Panel — Algorithmic day trading, position supervisor, and copy-trader. Built by @ghostwwn."
+        description="⚡ MWVSE Trading Panel — Algorithmic day trading, autonomous execution, and risk supervisor. Built by @ghostwwn."
     )
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
@@ -156,9 +197,9 @@ def app():
     p_term = subparsers.add_parser("terminal", help="Launch interactive Rich Terminal TUI")
     p_term.set_defaults(func=cmd_terminal)
 
-    # copy
-    p_copy = subparsers.add_parser("copy", help="Launch Leaderboard Copy-Trading Engine")
-    p_copy.set_defaults(func=cmd_copy)
+    # auto
+    p_auto = subparsers.add_parser("auto", help="Launch standalone Autonomous Trading Engine")
+    p_auto.set_defaults(func=cmd_auto)
 
     # status
     p_stat = subparsers.add_parser("status", help="Print account balance and position snapshot")

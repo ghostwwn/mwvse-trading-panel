@@ -16,15 +16,14 @@ from ...core.models import TradeOrder, PortfolioSnapshot
 from ...core.logger import logger, console
 from ...engine.executor import OrderExecutor
 from ...engine.scraper import MarketWatchScraper
-from ...supervisor.risk_manager import RiskManager
-from ...supervisor.scanner import ConfluenceScanner
+from ...supervisor.autonomous_engine import AutonomousTradingEngine
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 DASHBOARD_FILE = TEMPLATES_DIR / "dashboard.html"
 
 app = FastAPI(
     title="MWVSE Trading Panel",
-    description="Algorithmic trading panel, position supervisor, and copy-trading engine for MarketWatch VSE. Built by @ghostwwn.",
+    description="Algorithmic day-trading, autonomous execution, and risk supervisor for MarketWatch VSE. Built by @ghostwwn.",
     version="2.5.0"
 )
 
@@ -32,8 +31,7 @@ app = FastAPI(
 trade_queue: asyncio.Queue = asyncio.Queue()
 executor = OrderExecutor()
 scraper = MarketWatchScraper()
-risk_manager = RiskManager()
-scanner = ConfluenceScanner()
+auto_engine = AutonomousTradingEngine(queue=trade_queue)
 
 cached_portfolio = PortfolioSnapshot()
 recent_logs: List[Dict[str, str]] = []
@@ -85,19 +83,20 @@ async def autonomous_supervisor_loop():
         if not settings.autopilot_active:
             continue
 
-        # 1. Harvest Take-Profit & Stop-Loss
-        for h in cached_portfolio.holdings:
-            exit_order = risk_manager.evaluate_position(h)
-            if exit_order:
-                add_log(f"🛡️ [RISK TRIGGER] Liquidation queued for {h.symbol} ({exit_order.action.upper()})")
-                await trade_queue.put(exit_order)
+        try:
+            # 1. Harvest Take-Profit & Stop-Loss
+            await auto_engine.evaluate_exits(cached_portfolio)
+            # 2. Autonomous Breakout Scanner & Auto-Entry
+            await auto_engine.evaluate_entries(cached_portfolio)
+        except Exception as e:
+            logger.warning(f"Autonomous supervisor error: {e}")
 
 @app.on_event("startup")
 async def on_startup():
     asyncio.create_task(order_queue_worker())
     asyncio.create_task(portfolio_sync_daemon())
     asyncio.create_task(autonomous_supervisor_loop())
-    add_log("⚡ MWVSE Workstation online. Autonomous engine armed.")
+    add_log(f"⚡ MWVSE Workstation online. Autonomous Engine: ACTIVE ({settings.autopilot_strategy})")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_dashboard():
@@ -114,9 +113,24 @@ async def get_portfolio():
 async def get_logs():
     return {"logs": recent_logs}
 
+@app.get("/api/autopilot/status")
+async def get_autopilot_status():
+    return {
+        "active": settings.autopilot_active,
+        "strategy": settings.autopilot_strategy,
+        "max_positions": settings.max_concurrent_positions,
+        "allocation_per_trade": settings.allocation_per_trade_dollars
+    }
+
+@app.post("/api/autopilot/toggle")
+async def toggle_autopilot():
+    settings.autopilot_active = not settings.autopilot_active
+    state_str = "ACTIVE" if settings.autopilot_active else "PAUSED"
+    add_log(f"🤖 [AUTONOMOUS ENGINE] Auto-Pilot status switched to: {state_str}")
+    return {"active": settings.autopilot_active}
+
 @app.post("/webhook")
 async def handle_webhook(order: TradeOrder):
-    # Authenticate secret (or internal client token)
     if order.secret != settings.webhook_secret and order.secret != "client_internal_auth":
         raise HTTPException(status_code=403, detail="Invalid webhook secret token.")
 
